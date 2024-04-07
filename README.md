@@ -8,6 +8,14 @@ Browser extension for Firefox that allows you to zoom in on images.
 - Use scroll wheel while zooming in order to change the zoom level.
 - Use Ctrl + scroll wheel to change the lens size.
 
+## Todo
+
+- Prevent clicking on an image from the timeline opening the post (you can use still use it by simply moving the mouse out of the post when releasing the mouse button).
+- Add settings page:
+  - Change lens border radius, border width, and color.
+  - Change default values for zoom level and lens size.
+- Save settings to local storage.
+
 ## Credits
 
 Inspired by [Vencord](https://github.com/Vendicated/Vencord)'s [ImageZoom](https://github.com/Vendicated/Vencord/tree/main/src/plugins/imageZoom) plugin by [Syncxv](https://github.com/Syncxv).

@@ -1,25 +1,36 @@
-let lens: HTMLElement | null = null;
-let zoomLevel = 3;
-let lensSize = 400;
+let canvas: HTMLCanvasElement | null = null;
+let ctx: CanvasRenderingContext2D | null = null;
+let zoomLevel = 2;
+let lensSize = 300;
 let img: HTMLImageElement | null = null;
-const borderWidth = 2;
-const minLensSize = 100;
-const minZoom = 1;
-const maxZoom = 10;
 
-function createLens() {
-    if (lens) return;
-    lens = document.createElement('div');
-    lens.style.position = 'absolute';
-    lens.style.border = borderWidth + 'px solid #fff';
-    lens.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
-    lens.style.borderRadius = '50%';
-    lens.style.width = lensSize + 'px';
-    lens.style.height = lensSize + 'px';
-    lens.style.overflow = 'hidden';
-    lens.style.pointerEvents = 'none';
-    lens.style.backgroundRepeat = 'no-repeat';
-    document.body.appendChild(lens);
+const minLensSize = 50;
+const maxLensSize = window.innerWidth;
+const minZoomLevel = 1;
+const maxZoomLevel = 10;
+
+const borderRadius = 50;
+
+function createCanvas() {
+    if (canvas) return;
+    canvas = document.createElement('canvas');
+    canvas.width = lensSize;
+    canvas.height = lensSize;
+    canvas.style.position = 'fixed';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.borderRadius = borderRadius + '%';
+    canvas.style.boxShadow = '0 0 10px 5px rgba(0, 0, 0, 0.5)';
+    document.body.appendChild(canvas);
+
+    ctx = canvas.getContext('2d');
+}
+
+function removeCanvas() {
+    if (!canvas) return;
+    document.body.removeChild(canvas);
+    canvas.remove();
+    canvas = null;
+    ctx = null;
 }
 
 document.addEventListener(
@@ -27,67 +38,64 @@ document.addEventListener(
     (e) => {
         if (!e.shiftKey || e.button !== 0) return;
         if (!(e.target instanceof HTMLImageElement)) return;
-        e.preventDefault();
-        e.stopPropagation();
-        createLens();
         document.styleSheets[0].insertRule('img { cursor: none; }', 0);
-        if (!lens) return;
-        lens.style.display = 'block';
-        img = e.target as HTMLImageElement;
-        updateLens(e);
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        img = e.target;
+        createCanvas();
+        updateCanvas(e);
     },
-    { passive: false, capture: true },
+    { capture: true, passive: false },
 );
 
-document.addEventListener('mouseup', () => {
-    if (lens) lens.style.display = 'none';
-    img = null;
+document.addEventListener('mouseup', (e) => {
+    if (canvas) removeCanvas();
     document.styleSheets[0].deleteRule(0);
+    img = null;
 });
 
 document.addEventListener('mousemove', (e) => {
-    updateLens(e);
+    if (!canvas) return;
+    updateCanvas(e);
 });
 
 document.addEventListener(
     'wheel',
     (e) => {
-        if (!img || !lens) return;
+        if (!canvas || !img) return;
         e.preventDefault();
         if (e.ctrlKey) {
             lensSize += e.deltaY * -0.1;
             if (lensSize < minLensSize) lensSize = minLensSize;
-            if (lensSize > window.innerWidth) lensSize = window.innerWidth;
-            lens.style.width = lensSize + 'px';
-            lens.style.height = lensSize + 'px';
+            if (lensSize > maxLensSize) lensSize = maxLensSize;
+            updateCanvas(e);
         } else {
-            zoomLevel += e.deltaY * -0.01;
-            if (zoomLevel < minZoom) zoomLevel = minZoom;
-            if (zoomLevel > maxZoom) zoomLevel = maxZoom;
+            zoomLevel += e.deltaY * -0.005;
+            if (zoomLevel < minZoomLevel) zoomLevel = minZoomLevel;
+            if (zoomLevel > maxZoomLevel) zoomLevel = maxZoomLevel;
+            updateCanvas(e);
         }
-        updateLens(e);
     },
     { passive: false },
 );
 
-function updateLens(e: MouseEvent) {
-    if (!lens || !img) return;
+function updateCanvas(e: MouseEvent) {
+    if (!canvas || !ctx || !img) return;
+
     const rect = img.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-    lens.style.backgroundImage = `url(${img.src})`;
-    lens.style.backgroundSize = `${img.width * zoomLevel}px ${img.height * zoomLevel}px`;
+    const sourceX = (x / rect.width) * img.naturalWidth - lensSize / (2 * zoomLevel);
+    const sourceY = (y / rect.height) * img.naturalHeight - lensSize / (2 * zoomLevel);
+    const sourceWidth = lensSize / zoomLevel;
+    const sourceHeight = lensSize / zoomLevel;
 
-    const bgx = (e.pageX - rect.left) * zoomLevel - lens.offsetWidth / 2 + borderWidth;
-    const bgy = (e.pageY - rect.top) * zoomLevel - lens.offsetHeight / 2 + borderWidth;
+    canvas.width = lensSize;
+    canvas.height = lensSize;
+    canvas.style.left = `${e.clientX - lensSize / 2}px`;
+    canvas.style.top = `${e.clientY - lensSize / 2}px`;
 
-    lens.style.backgroundPositionX = `-${bgx}px`;
-    lens.style.backgroundPositionY = `-${bgy}px`;
-
-    const imgX = e.clientX - rect.left;
-    const imgY = e.clientY - rect.top;
-    const lensX = imgX - lensSize / 2;
-    const lensY = imgY - lensSize / 2;
-
-    lens.style.left = rect.left + lensX + 'px';
-    lens.style.top = rect.top + lensY + 'px';
+    ctx.clearRect(0, 0, lensSize, lensSize);
+    ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, lensSize, lensSize);
 }

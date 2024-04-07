@@ -6,7 +6,7 @@
   "permissions": ["activeTab"],
   "content_scripts": [
     {
-      "matches": ["*://twitter.com/*"],
+      "matches": ["*://twitter.com/*", "*://pbs.twimg.com/*"],
       "js": ["contentScript.js"]
     }
   ],
