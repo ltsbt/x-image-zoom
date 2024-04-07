@@ -1,7 +1,7 @@
-import Popup from "./Popup.svelte";
+import Popup from './Popup.svelte';
 
 const app = new Popup({
-  target: document.getElementById("app")!,
+    target: document.getElementById('app')!,
 });
 
 export default app;
