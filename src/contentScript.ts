@@ -38,7 +38,12 @@ document.addEventListener(
     (e) => {
         if (!e.shiftKey || e.button !== 0) return;
         if (!(e.target instanceof HTMLImageElement)) return;
-        document.styleSheets[0].insertRule('img { cursor: none; }', 0);
+
+        // Cannot set stylesheets when viewing images from pbs.twimg.com because of CORS policy
+        if (window.location.hostname === 'twitter.com') {
+            document.styleSheets[0].insertRule('img { cursor: none; }', 0);
+        }
+
         e.preventDefault();
         e.stopImmediatePropagation();
         img = e.target;
@@ -50,7 +55,12 @@ document.addEventListener(
 
 document.addEventListener('mouseup', (e) => {
     if (canvas) removeCanvas();
-    document.styleSheets[0].deleteRule(0);
+
+    // Cannot set stylesheets when viewing images from pbs.twimg.com because of CORS policy
+    if (window.location.hostname === 'twitter.com') {
+        document.styleSheets[0].deleteRule(0);
+    }
+
     img = null;
 });
 
