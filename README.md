@@ -10,7 +10,6 @@ Browser extension for Firefox that allows you to zoom in on images.
 
 ## Todo
 
-- Prevent clicking on an image from the timeline opening the post (you can use still use it by simply moving the mouse out of the post when releasing the mouse button).
 - Add settings page:
   - Change lens border radius, border width, and color.
   - Change default values for zoom level and lens size.

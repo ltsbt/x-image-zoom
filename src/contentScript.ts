@@ -39,13 +39,14 @@ document.addEventListener(
         if (!e.shiftKey || e.button !== 0) return;
         if (!(e.target instanceof HTMLImageElement)) return;
 
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
         // Cannot set stylesheets when viewing images from pbs.twimg.com because of CORS policy
         if (window.location.hostname === 'twitter.com') {
             document.styleSheets[0].insertRule('img { cursor: none; }', 0);
         }
 
-        e.preventDefault();
-        e.stopImmediatePropagation();
         img = e.target;
         createCanvas();
         updateCanvas(e);
@@ -53,8 +54,11 @@ document.addEventListener(
     { capture: true, passive: false },
 );
 
-document.addEventListener('mouseup', (e) => {
-    if (canvas) removeCanvas();
+document.addEventListener('click', (e) => {
+    if (!canvas) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
 
     // Cannot set stylesheets when viewing images from pbs.twimg.com because of CORS policy
     if (window.location.hostname === 'twitter.com') {
@@ -62,7 +66,9 @@ document.addEventListener('mouseup', (e) => {
     }
 
     img = null;
-});
+    removeCanvas();
+}, { capture: true, passive: false });
+
 
 document.addEventListener('mousemove', (e) => {
     if (!canvas) return;
@@ -74,6 +80,7 @@ document.addEventListener(
     (e) => {
         if (!canvas || !img) return;
         e.preventDefault();
+        e.stopImmediatePropagation();
         if (e.ctrlKey) {
             lensSize += e.deltaY * -0.1;
             if (lensSize < minLensSize) lensSize = minLensSize;
@@ -86,7 +93,7 @@ document.addEventListener(
             updateCanvas(e);
         }
     },
-    { passive: false },
+    { capture: true, passive: false },
 );
 
 function updateCanvas(e: MouseEvent) {
