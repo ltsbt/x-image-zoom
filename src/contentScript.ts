@@ -1,15 +1,29 @@
+import browser from 'webextension-polyfill';
+
+const MIN_LENS_SIZE = 50;
+const MAX_LENS_SIZE = window.innerWidth;
+const MIN_ZOOM_LEVEL = 1;
+const MAX_ZOOM_LEVEL = 10;
+
+const DEFAULT_BORDER_RADIUS = 0;
+const DEFAULT_LENS_SIZE = 300;
+const DEFAULT_ZOOM_LEVEL = 2;
+
 let canvas: HTMLCanvasElement | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
-let zoomLevel = 2;
-let lensSize = 300;
 let img: HTMLImageElement | null = null;
 
-const minLensSize = 50;
-const maxLensSize = window.innerWidth;
-const minZoomLevel = 1;
-const maxZoomLevel = 10;
+let zoomLevel: number;
+let lensSize: number;
+let borderRadius: number;
 
-const borderRadius = 50;
+let didSettingsChange = false;
+
+browser.storage.local.get().then((settings) => {
+    zoomLevel = settings.zoomLevel || DEFAULT_ZOOM_LEVEL;
+    lensSize = settings.lensSize || DEFAULT_LENS_SIZE;
+    borderRadius = settings.borderRadius || DEFAULT_BORDER_RADIUS;
+});
 
 function createCanvas() {
     if (canvas) return;
@@ -54,21 +68,29 @@ document.addEventListener(
     { capture: true, passive: false },
 );
 
-document.addEventListener('click', (e) => {
-    if (!canvas) return;
+document.addEventListener(
+    'click',
+    (e) => {
+        if (!canvas) return;
 
-    e.preventDefault();
-    e.stopImmediatePropagation();
+        e.preventDefault();
+        e.stopImmediatePropagation();
 
-    // Cannot set stylesheets when viewing images from pbs.twimg.com because of CORS policy
-    if (window.location.hostname === 'twitter.com') {
-        document.styleSheets[0].deleteRule(0);
-    }
+        // Cannot set stylesheets when viewing images from pbs.twimg.com because of CORS policy
+        if (window.location.hostname === 'twitter.com') {
+            document.styleSheets[0].deleteRule(0);
+        }
 
-    img = null;
-    removeCanvas();
-}, { capture: true, passive: false });
+        img = null;
+        removeCanvas();
 
+        if (didSettingsChange) {
+            browser.storage.local.set({ zoomLevel, lensSize, borderRadius });
+            didSettingsChange = false;
+        }
+    },
+    { capture: true, passive: false },
+);
 
 document.addEventListener('mousemove', (e) => {
     if (!canvas) return;
@@ -79,17 +101,21 @@ document.addEventListener(
     'wheel',
     (e) => {
         if (!canvas || !img) return;
+
         e.preventDefault();
         e.stopImmediatePropagation();
+
+        didSettingsChange = true;
+
         if (e.ctrlKey) {
             lensSize += e.deltaY * -0.1;
-            if (lensSize < minLensSize) lensSize = minLensSize;
-            if (lensSize > maxLensSize) lensSize = maxLensSize;
+            if (lensSize < MIN_LENS_SIZE) lensSize = MIN_LENS_SIZE;
+            if (lensSize > MAX_LENS_SIZE) lensSize = MAX_LENS_SIZE;
             updateCanvas(e);
         } else {
             zoomLevel += e.deltaY * -0.005;
-            if (zoomLevel < minZoomLevel) zoomLevel = minZoomLevel;
-            if (zoomLevel > maxZoomLevel) zoomLevel = maxZoomLevel;
+            if (zoomLevel < MIN_ZOOM_LEVEL) zoomLevel = MIN_ZOOM_LEVEL;
+            if (zoomLevel > MAX_ZOOM_LEVEL) zoomLevel = MAX_ZOOM_LEVEL;
             updateCanvas(e);
         }
     },

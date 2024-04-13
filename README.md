@@ -13,7 +13,6 @@ Browser extension for Firefox that allows you to zoom in on images.
 - Add settings page:
   - Change lens border radius, border width, and color.
   - Change default values for zoom level and lens size.
-- Save settings to local storage.
 
 ## Credits
 
